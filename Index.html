@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Room Design Customizer</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #141414;
+      color: #d0d0d0;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── Scene panel ── */
+    .scene-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      min-width: 0;
+    }
+
+    canvas {
+      width: 100%;
+      height: auto;
+      max-height: calc(100vh - 48px);
+      border-radius: 10px;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.65);
+      display: block;
+    }
+
+    /* ── Controls panel ── */
+    .controls {
+      width: 272px;
+      flex-shrink: 0;
+      background: #1c1c1c;
+      border-left: 1px solid #2a2a2a;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .ctrl-header {
+      padding: 18px 18px 14px;
+      border-bottom: 1px solid #262626;
+    }
+
+    .ctrl-header h1 {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #fff;
+    }
+
+    .ctrl-header p {
+      margin-top: 4px;
+      font-size: 11px;
+      color: #555;
+      letter-spacing: 0.4px;
+    }
+
+    .ctrl-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 18px 24px;
+      scrollbar-width: thin;
+      scrollbar-color: #303030 transparent;
+    }
+
+    .section { margin-bottom: 20px; }
+
+    .sec-title {
+      font-size: 9.5px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #484848;
+      margin-bottom: 10px;
+    }
+
+    /* Color row */
+    .color-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 7px;
+    }
+
+    .color-row label {
+      flex: 1;
+      font-size: 12.5px;
+      color: #b8b8b8;
+    }
+
+    .swatch {
+      width: 32px;
+      height: 32px;
+      border-radius: 7px;
+      border: 2px solid #333;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: border-color .15s, transform .1s;
+      flex-shrink: 0;
+    }
+
+    .swatch:hover { border-color: #555; transform: scale(1.06); }
+
+    .swatch input[type="color"] {
+      position: absolute;
+      inset: -8px;
+      width: calc(100% + 16px);
+      height: calc(100% + 16px);
+      opacity: 0;
+      cursor: pointer;
+      border: none;
+      padding: 0;
+    }
+
+    /* Slider row */
+    .slider-row { margin-bottom: 9px; }
+
+    .slider-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 4px;
+    }
+
+    .slider-top label { font-size: 12.5px; color: #b8b8b8; }
+
+    .slider-top .val {
+      font-size: 11px;
+      color: #555;
+      font-variant-numeric: tabular-nums;
+      min-width: 26px;
+      text-align: right;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 3px;
+      accent-color: #C9A06B;
+      cursor: pointer;
+    }
+
+    hr.sep {
+      border: none;
+      border-top: 1px solid #242424;
+      margin: 14px 0;
+    }
+  </style>
+</head>
+<body>
+
+<div class="scene-wrap">
+  <canvas id="c" width="1030" height="620"></canvas>
+</div>
+
+<div class="controls">
+  <div class="ctrl-header">
+    <h1>Design Studio</h1>
+    <p>Customize colors &amp; dimensions</p>
+  </div>
+
+  <div class="ctrl-body">
+
+    <!-- COLORS -->
+    <div class="section">
+      <div class="sec-title">Colors</div>
+
+      <div class="color-row">
+        <label>Wall</label>
+        <div class="swatch" id="sw-wall"><input type="color" id="c-wall" value="#CBC6BE"></div>
+      </div>
+      <div class="color-row">
+        <label>Floor</label>
+        <div class="swatch" id="sw-floor"><input type="color" id="c-floor" value="#B4AFA7"></div>
+      </div>
+      <div class="color-row">
+        <label>Cabinet Fronts</label>
+        <div class="swatch" id="sw-cabinet"><input type="color" id="c-cabinet" value="#F0EDE7"></div>
+      </div>
+      <div class="color-row">
+        <label>Wood Trim</label>
+        <div class="swatch" id="sw-wood"><input type="color" id="c-wood" value="#9A7A4E"></div>
+      </div>
+      <div class="color-row">
+        <label>Slat Panels</label>
+        <div class="swatch" id="sw-panel"><input type="color" id="c-panel" value="#B8895A"></div>
+      </div>
+      <div class="color-row">
+        <label>Door</label>
+        <div class="swatch" id="sw-door"><input type="color" id="c-door" value="#E2DDD7"></div>
+      </div>
+    </div>
+
+    <hr class="sep">
+
+    <!-- SLAT PANELS -->
+    <div class="section">
+      <div class="sec-title">Slat Panels</div>
+
+      <div class="slider-row">
+        <div class="slider-top"><label>Count</label><span class="val" id="v-count">14</span></div>
+        <input type="range" id="r-count" min="4" max="32" value="14" step="1">
+      </div>
+      <div class="slider-row">
+        <div class="slider-top"><label>Width (px)</label><span class="val" id="v-pwidth">12</span></div>
+        <input type="range" id="r-pwidth" min="4" max="30" value="12" step="1">
+      </div>
+      <div class="slider-row">
+        <div class="slider-top"><label>Gap (px)</label><span class="val" id="v-pgap">6</span></div>
+        <input type="range" id="r-pgap" min="2" max="20" value="6" step="1">
+      </div>
+      <div class="slider-row">
+        <div class="slider-top"><label>Height (px)</label><span class="val" id="v-pheight">280</span></div>
+        <input type="range" id="r-pheight" min="60" max="430" value="280" step="5">
+      </div>
+      <div class="slider-row">
+        <div class="slider-top"><label>Position</label><span class="val" id="v-ppos">625</span></div>
+        <input type="range" id="r-ppos" min="200" max="980" value="625" step="5">
+      </div>
+    </div>
+
+    <hr class="sep">
+
+    <!-- CONSOLE -->
+    <div class="section">
+      <div class="sec-title">Console / Sideboard</div>
+
+      <div class="slider-row">
+        <div class="slider-top"><label>Height (px)</label><span class="val" id="v-cheight">120</span></div>
+        <input type="range" id="r-cheight" min="60" max="210" value="120" step="5">
+      </div>
+      <div class="slider-row">
+        <div class="slider-top"><label>Cabinet Doors</label><span class="val" id="v-doors">6</span></div>
+        <input type="range" id="r-doors" min="2" max="10" value="6" step="1">
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ─────────────────────────────────────────
+   CANVAS SETUP
+───────────────────────────────────────── */
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+
+/* ─────────────────────────────────────────
+   FIXED LAYOUT CONSTANTS
+───────────────────────────────────────── */
+const FLOOR_Y   = 510;   // where wall meets floor
+const SH_X      = 0;     // shelf unit left x — starts at left wall
+const SH_W      = 168;   // shelf unit width
+const CON_X     = 0;     // console starts at left wall
+const DOOR_X    = 870;
+const DOOR_W    = 140;
+const CON_W     = DOOR_X - 7;   // console ends at door frame
+const CAB_X     = CON_X;        // cabinet doors span full width from left wall
+
+/* ─────────────────────────────────────────
+   MUTABLE CONFIG
+───────────────────────────────────────── */
+const cfg = {
+  wallColor:    '#CBC6BE',
+  floorColor:   '#B4AFA7',
+  cabinetColor: '#F0EDE7',
+  woodColor:    '#9A7A4E',
+  panelColor:   '#B8895A',
+  doorColor:    '#E2DDD7',
+  panelCount:   14,
+  panelWidth:   12,
+  panelGap:     6,
+  panelHeight:  340,
+  panelPos:     625,   // slat panel group centre x
+  consoleH:     120,
+  cabinetDoors: 5,
+};
+
+/* ─────────────────────────────────────────
+   COLOR HELPERS
+───────────────────────────────────────── */
+function hexToRGB(hex) {
+  // always #rrggbb from <input type="color">
+  return [parseInt(hex.slice(1,3),16), parseInt(hex.slice(3,5),16), parseInt(hex.slice(5,7),16)];
+}
+
+function shade(hex, d) {
+  const [r,g,b] = hexToRGB(hex);
+  const c = v => Math.max(0, Math.min(255, v + d));
+  return `rgb(${c(r)},${c(g)},${c(b)})`;
+}
+
+function alpha(hex, a) {
+  const [r,g,b] = hexToRGB(hex);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+/* ─────────────────────────────────────────
+   DRAWING UTILITIES
+───────────────────────────────────────── */
+function rr(x, y, w, h, r) {
+  r = Math.min(r, w/2, h/2);
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.lineTo(x+w-r, y);
+  ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+  ctx.lineTo(x+w, y+h-r);
+  ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+  ctx.lineTo(x+r, y+h);
+  ctx.quadraticCurveTo(x, y+h, x, y+h-r);
+  ctx.lineTo(x, y+r);
+  ctx.quadraticCurveTo(x, y, x+r, y);
+  ctx.closePath();
+}
+
+function lg(x1, y1, x2, y2, stops) {
+  const g = ctx.createLinearGradient(x1, y1, x2, y2);
+  stops.forEach(([p, c]) => g.addColorStop(p, c));
+  return g;
+}
+
+/* ─────────────────────────────────────────
+   MAIN DRAW
+───────────────────────────────────────── */
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  drawRoom();
+  drawConsole();   // draw first so shelf overlaps it
+  drawShelf();
+  drawSlats();
+  drawDoor();
+  drawSwitch();
+  drawAccents();
+}
+
+/* ── Room: wall & floor ── */
+function drawRoom() {
+  // Ceiling strip
+  ctx.fillStyle = shade(cfg.wallColor, 10);
+  ctx.fillRect(0, 0, W, 16);
+
+  // Wall with side darkening for depth
+  ctx.fillStyle = lg(0, 0, W, 0, [
+    [0,    shade(cfg.wallColor, -20)],
+    [0.10, cfg.wallColor],
+    [0.88, cfg.wallColor],
+    [1,    shade(cfg.wallColor, -24)],
+  ]);
+  ctx.fillRect(0, 16, W, FLOOR_Y - 16);
+
+  // Ceiling shadow
+  ctx.fillStyle = lg(0, 16, 0, 52, [[0,'rgba(0,0,0,0.10)'], [1,'rgba(0,0,0,0)']]);
+  ctx.fillRect(0, 16, W, 36);
+
+  // Floor
+  ctx.fillStyle = lg(0, FLOOR_Y, 0, H, [
+    [0, shade(cfg.floorColor, -4)],
+    [1, shade(cfg.floorColor, -32)],
+  ]);
+  ctx.fillRect(0, FLOOR_Y, W, H - FLOOR_Y);
+
+  // Wall→floor shadow
+  ctx.fillStyle = lg(0, FLOOR_Y-18, 0, FLOOR_Y+8, [[0,'rgba(0,0,0,0)'], [1,'rgba(0,0,0,0.14)']]);
+  ctx.fillRect(0, FLOOR_Y - 18, W, 26);
+}
+
+/* ── Console / sideboard ── */
+function drawConsole() {
+  const topY  = FLOOR_Y - cfg.consoleH - 16;  // wooden top y
+  const legH  = 20;
+  const cabY  = FLOOR_Y - cfg.consoleH;
+  const cabH  = cfg.consoleH - legH;
+  const cabW  = CON_W;   // full console width
+
+  /* Drop shadow */
+  ctx.fillStyle = 'rgba(0,0,0,0.10)';
+  ctx.fillRect(CON_X, topY + 6, CON_W + 4, 14);
+
+  /* Wooden top */
+  ctx.fillStyle = lg(0, topY, 0, topY + 16, [
+    [0, shade(cfg.woodColor, 30)],
+    [0.5, shade(cfg.woodColor, 12)],
+    [1, cfg.woodColor],
+  ]);
+  rr(CON_X, topY, CON_W, 16, 2);
+  ctx.fill();
+
+  // Wood grain lines
+  ctx.strokeStyle = alpha(cfg.woodColor, 0.20);
+  ctx.lineWidth = 0.7;
+  for (let gx = CON_X + 18; gx < CON_X + CON_W - 10; gx += 24) {
+    ctx.beginPath();
+    ctx.moveTo(gx, topY + 1);
+    ctx.lineTo(gx + 5, topY + 15);
+    ctx.stroke();
+  }
+
+  /* Cabinet body — full width */
+  ctx.fillStyle = lg(CON_X, cabY, CON_X, cabY + cabH, [
+    [0, shade(cfg.cabinetColor, 6)],
+    [1, shade(cfg.cabinetColor, -5)],
+  ]);
+  ctx.fillRect(CON_X, cabY, cabW, cabH);
+
+  /* Cabinet doors */
+  const dw = cabW / cfg.cabinetDoors;
+  for (let i = 0; i < cfg.cabinetDoors; i++) {
+    const dx = CON_X + i * dw;
+
+    // Hairline gap
+    ctx.fillStyle = alpha(cfg.woodColor, 0.13);
+    ctx.fillRect(dx, cabY, 1.2, cabH);
+
+    // Door face gradient
+    ctx.fillStyle = lg(dx, cabY, dx + dw, cabY, [
+      [0, shade(cfg.cabinetColor, 7)],
+      [0.5, cfg.cabinetColor],
+      [1, shade(cfg.cabinetColor, -4)],
+    ]);
+    ctx.fillRect(dx + 1.2, cabY + 5, dw - 1.2, cabH - 5);
+
+    // Handle bar
+    const hw = dw * 0.34, hx = dx + (dw - hw) / 2;
+    const hy = cabY + cabH * 0.50 - 2;
+    ctx.fillStyle = shade(cfg.woodColor, -6);
+    rr(hx, hy, hw, 4, 2);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.22)';
+    rr(hx, hy, hw, 1.5, 1);
+    ctx.fill();
+  }
+
+  /* Bottom strip */
+  ctx.fillStyle = shade(cfg.woodColor, -8);
+  ctx.fillRect(CON_X, FLOOR_Y - legH - 2, CON_W, 2);
+
+  /* Legs evenly across full console width */
+  const nLegs = 8;
+  const spacing = CON_W / (nLegs + 1);
+  for (let i = 0; i < nLegs; i++) {
+    const lx = CON_X + spacing * (i + 1) - 5;
+    ctx.fillStyle = lg(lx, FLOOR_Y - legH, lx + 10, FLOOR_Y - legH, [
+      [0, shade(cfg.woodColor, 20)],
+      [1, shade(cfg.woodColor, -14)],
+    ]);
+    rr(lx, FLOOR_Y - legH, 10, legH - 2, 2);
+    ctx.fill();
+    // Leg shadow on floor
+    ctx.fillStyle = 'rgba(0,0,0,0.07)';
+    ctx.beginPath();
+    ctx.ellipse(lx + 5, FLOOR_Y + 1, 7, 3, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+/* ── Left shelf unit — wall-mounted above console ── */
+function drawShelf() {
+  const consoleTopY = FLOOR_Y - cfg.consoleH - 16;
+  const top = 0, bot = consoleTopY;  // ceiling to console surface
+  const th  = 13;
+  const iX  = SH_X + th, iW = SH_W - th * 2;
+
+  // Recessed back (wall colour slightly darker)
+  ctx.fillStyle = shade(cfg.wallColor, -10);
+  ctx.fillRect(iX, top + th, iW, bot - top - th);
+
+  // Left side
+  ctx.fillStyle = lg(SH_X, 0, SH_X + th, 0, [
+    [0, shade(cfg.woodColor, 26)], [1, cfg.woodColor],
+  ]);
+  ctx.fillRect(SH_X, top, th, bot - top);
+
+  // Right side
+  ctx.fillStyle = lg(SH_X + SH_W - th, 0, SH_X + SH_W, 0, [
+    [0, cfg.woodColor], [1, shade(cfg.woodColor, -16)],
+  ]);
+  ctx.fillRect(SH_X + SH_W - th, top, th, bot - top);
+
+  // Top piece
+  ctx.fillStyle = lg(0, top, 0, top + th, [
+    [0, shade(cfg.woodColor, 22)], [1, cfg.woodColor],
+  ]);
+  ctx.fillRect(SH_X, top, SH_W, th);
+
+  // Shelf boards
+  const shelfYs = [0.28, 0.53, 0.73].map(f => top + (bot - top) * f);
+  shelfYs.forEach(sy => {
+    ctx.fillStyle = lg(0, sy, 0, sy + 11, [
+      [0, shade(cfg.woodColor, 20)], [1, shade(cfg.woodColor, -4)],
+    ]);
+    ctx.fillRect(SH_X, sy, SH_W, 11);
+    // shadow under shelf
+    ctx.fillStyle = lg(0, sy + 11, 0, sy + 22, [
+      [0,'rgba(0,0,0,0.07)'], [1,'rgba(0,0,0,0)'],
+    ]);
+    ctx.fillRect(iX, sy + 11, iW, 11);
+  });
+
+  drawShelfContents(top, bot, shelfYs, iX, iW);
+}
+
+function drawShelfContents(shelfTop, floorY, shelfYs, iX, iW) {
+  const th = 11; // shelf thickness
+
+  /* Section 0 – top to shelf 1: books + tall vase */
+  const s0bot = shelfYs[0];
+  const books = [
+    { w:15, h:54, c:'#8B4A3A' },
+    { w:11, h:44, c:'#3A5A8B' },
+    { w:15, h:62, c:'#4A7A4A' },
+    { w:12, h:50, c:'#8B6A3A' },
+    { w:10, h:40, c:'#6A3A8B' },
+  ];
+  let bx = iX + 6;
+  books.forEach(b => {
+    ctx.fillStyle = b.c;
+    ctx.fillRect(bx, s0bot - b.h, b.w, b.h);
+    ctx.fillStyle = shade(b.c, 28);
+    ctx.fillRect(bx + 1, s0bot - b.h + 3, b.w - 2, 3);
+    bx += b.w + 2;
+  });
+  // Vase
+  ctx.fillStyle = shade(cfg.woodColor, -16);
+  ctx.fillRect(iX + iW - 30, s0bot - 62, 15, 62);
+  ctx.fillStyle = shade(cfg.wallColor, -18);
+  ctx.fillRect(iX + iW - 32, s0bot - 62, 19, 8);
+  // Dry stems
+  ctx.strokeStyle = shade(cfg.woodColor, 18);
+  ctx.lineWidth = 1.5;
+  [-14, -7, 0, 7, 14].forEach(dx => {
+    ctx.beginPath();
+    ctx.moveTo(iX + iW - 23, s0bot - 62);
+    ctx.lineTo(iX + iW - 23 + dx, s0bot - 106);
+    ctx.stroke();
+  });
+
+  /* Section 1 – shelf 1→2: ceramic bowls */
+  const s1bot = shelfYs[1];
+  drawBowl(iX + iW * 0.20, s1bot, 34, 16, shade(cfg.wallColor, 12));
+  drawBowl(iX + iW * 0.46, s1bot, 28, 13, shade(cfg.wallColor, 20));
+  drawBowl(iX + iW * 0.70, s1bot, 24, 11, shade(cfg.cabinetColor, 4));
+
+  /* Section 2 – shelf 2→3: spice jars */
+  const s2bot = shelfYs[2];
+  [cfg.panelColor, shade(cfg.woodColor, -10), shade(cfg.woodColor, 14), cfg.panelColor]
+    .forEach((jc, i) => drawJar(iX + 10 + i * 34, s2bot, jc));
+
+  /* Section 3 – shelf 3→floor: wine bottles */
+  drawBottle(iX + 18, floorY, '#6B3020');
+  drawBottle(iX + 42, floorY, '#3E2A18');
+}
+
+function drawBowl(cx, y, w, h, col) {
+  ctx.fillStyle = col;
+  ctx.beginPath();
+  ctx.ellipse(cx, y, w/2, h/2, 0, Math.PI, 0);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = shade(col, 18);
+  ctx.beginPath();
+  ctx.ellipse(cx, y - h/2 + 1, w/2 - 2, 3, 0, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawJar(x, y, col) {
+  ctx.fillStyle = col;
+  rr(x, y - 32, 16, 32, 3); ctx.fill();
+  ctx.fillStyle = shade(col, 24);
+  ctx.fillRect(x + 3, y - 30, 4, 26);
+  ctx.fillStyle = shade(col, -20);
+  rr(x - 1, y - 37, 18, 7, 2); ctx.fill();
+}
+
+function drawBottle(x, y, col) {
+  ctx.fillStyle = col;
+  rr(x, y - 82, 18, 66, 6); ctx.fill();
+  ctx.fillStyle = shade(col, -12);
+  ctx.fillRect(x + 5, y - 114, 8, 34);
+  ctx.fillStyle = '#D4B896';
+  ctx.fillRect(x + 5, y - 120, 8, 8);
+  ctx.fillStyle = shade(col, 28);
+  ctx.fillRect(x + 3, y - 64, 12, 22);
+  ctx.fillStyle = '#ffffff22';
+  ctx.fillRect(x + 3, y - 82, 4, 66);
+}
+
+/* ── Slat panels ── */
+function drawSlats() {
+  const totalW = cfg.panelCount * cfg.panelWidth +
+                 Math.max(0, cfg.panelCount - 1) * cfg.panelGap;
+  const px = cfg.panelPos - totalW / 2;
+
+  const consoleTopY = FLOOR_Y - cfg.consoleH - 16;
+  const slatBot     = consoleTopY - 2;
+  const slatTop     = Math.max(20, slatBot - cfg.panelHeight);
+  const slatH       = slatBot - slatTop;
+
+  /* Mount board */
+  const pad = 16;
+  const bx = px - pad, bw = totalW + pad * 2;
+  ctx.fillStyle = shade(cfg.wallColor, -18);
+  rr(bx - 2, slatTop - 2, bw + 4, slatH + 4, 3); ctx.fill();
+  ctx.fillStyle = shade(cfg.wallColor, -8);
+  rr(bx, slatTop, bw, slatH, 2); ctx.fill();
+
+  /* Slats */
+  const slatR = Math.min(2, cfg.panelWidth / 4);
+  for (let i = 0; i < cfg.panelCount; i++) {
+    const sx = px + i * (cfg.panelWidth + cfg.panelGap);
+    ctx.fillStyle = lg(sx, 0, sx + cfg.panelWidth, 0, [
+      [0,    shade(cfg.panelColor, 26)],
+      [0.25, shade(cfg.panelColor, 10)],
+      [0.70, cfg.panelColor],
+      [1,    shade(cfg.panelColor, -20)],
+    ]);
+    rr(sx, slatTop, cfg.panelWidth, slatH, slatR);
+    ctx.fill();
+    // highlight edge
+    ctx.fillStyle = 'rgba(255,255,255,0.11)';
+    ctx.fillRect(sx, slatTop + 5, 1.5, slatH - 10);
+    // inner shadow edge
+    ctx.fillStyle = 'rgba(0,0,0,0.08)';
+    ctx.fillRect(sx + cfg.panelWidth - 1.5, slatTop + 5, 1.5, slatH - 10);
+  }
+
+  /* Drop shadow below mount board */
+  ctx.fillStyle = lg(0, slatBot, 0, slatBot + 20, [
+    [0, 'rgba(0,0,0,0.09)'], [1, 'rgba(0,0,0,0)'],
+  ]);
+  ctx.fillRect(bx, slatBot, bw, 20);
+}
+
+/* ── Door ── */
+function drawDoor() {
+  const fullH = FLOOR_Y - 50;
+  const h   = Math.round(fullH * 0.80);   // 20% shorter
+  const top = FLOOR_Y - h;                // still rests on the floor
+
+  // Frame
+  ctx.fillStyle = shade(cfg.doorColor, -16);
+  ctx.fillRect(DOOR_X - 7, top - 6, DOOR_W + 14, h + 6);
+
+  // Slab
+  ctx.fillStyle = lg(DOOR_X, 0, DOOR_X + DOOR_W, 0, [
+    [0,    shade(cfg.doorColor, 12)],
+    [0.65, cfg.doorColor],
+    [1,    shade(cfg.doorColor, -10)],
+  ]);
+  ctx.fillRect(DOOR_X, top, DOOR_W, h);
+
+  // Left edge shadow
+  ctx.fillStyle = lg(DOOR_X, 0, DOOR_X + 24, 0, [
+    [0, 'rgba(0,0,0,0.09)'], [1, 'rgba(0,0,0,0)'],
+  ]);
+  ctx.fillRect(DOOR_X, top, 24, h);
+
+  // Knob
+  const knobX = DOOR_X + 18, knobY = top + h * 0.52;
+  ctx.fillStyle = shade(cfg.wallColor, -12);
+  ctx.beginPath();
+  ctx.arc(knobX, knobY, 5, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+/* ── Light switch ── */
+function drawSwitch() {
+  const sx = DOOR_X - 50, sy = H * 0.30;
+  ctx.fillStyle = shade(cfg.wallColor, 18);
+  rr(sx, sy, 30, 50, 4); ctx.fill();
+  ctx.strokeStyle = shade(cfg.wallColor, -12);
+  ctx.lineWidth = 0.8; ctx.stroke();
+  [8, 30].forEach(oy => {
+    ctx.fillStyle = shade(cfg.wallColor, 7);
+    rr(sx + 4, sy + oy, 22, 13, 2); ctx.fill();
+  });
+}
+
+/* ── Console accessories (tray + speaker) ── */
+function drawAccents() {
+  const topY = FLOOR_Y - cfg.consoleH - 16;
+  const ax   = cfg.panelPos + 60;
+
+  // Tray
+  ctx.fillStyle = shade(cfg.woodColor, -14);
+  rr(ax - 48, topY - 6, 96, 6, 2); ctx.fill();
+
+  // Dish on tray
+  ctx.fillStyle = shade(cfg.wallColor, 12);
+  ctx.beginPath();
+  ctx.ellipse(ax - 16, topY - 7, 16, 7, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = shade(cfg.wallColor, 0);
+  ctx.beginPath();
+  ctx.ellipse(ax - 16, topY - 9, 13, 4.5, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // objects in dish
+  ctx.fillStyle = '#898989';
+  ctx.beginPath(); ctx.arc(ax - 21, topY - 11, 3, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#b0b0b0';
+  ctx.beginPath(); ctx.arc(ax - 11, topY - 11, 2.5, 0, Math.PI*2); ctx.fill();
+
+  // Portable speaker
+  const spkX = ax + 52, spkW = 60, spkH = 44;
+  ctx.fillStyle = shade(cfg.wallColor, -20);
+  rr(spkX, topY - spkH, spkW, spkH, 8); ctx.fill();
+  ctx.fillStyle = shade(cfg.wallColor, -28);
+  rr(spkX + 5, topY - spkH + 9, spkW - 10, spkH - 18, 5); ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,0.20)'; ctx.lineWidth = 0.9;
+  for (let gy = topY - spkH + 13; gy < topY - 11; gy += 5) {
+    ctx.beginPath();
+    ctx.moveTo(spkX + 5, gy);
+    ctx.lineTo(spkX + spkW - 5, gy);
+    ctx.stroke();
+  }
+  // Speaker strap / handle
+  ctx.fillStyle = shade(cfg.wallColor, -12);
+  rr(spkX + 16, topY - spkH - 7, spkW - 32, 7, 4); ctx.fill();
+}
+
+/* ─────────────────────────────────────────
+   CONTROLS WIRING
+───────────────────────────────────────── */
+function setupControls() {
+  // Color pickers
+  [
+    ['c-wall',    'sw-wall',    'wallColor'],
+    ['c-floor',   'sw-floor',   'floorColor'],
+    ['c-cabinet', 'sw-cabinet', 'cabinetColor'],
+    ['c-wood',    'sw-wood',    'woodColor'],
+    ['c-panel',   'sw-panel',   'panelColor'],
+    ['c-door',    'sw-door',    'doorColor'],
+  ].forEach(([inputId, swatchId, key]) => {
+    const input  = document.getElementById(inputId);
+    const swatch = document.getElementById(swatchId);
+    swatch.style.background = input.value;
+    swatch.addEventListener('click', () => input.click());
+    input.addEventListener('input', () => {
+      cfg[key] = input.value;
+      swatch.style.background = input.value;
+      draw();
+    });
+  });
+
+  // Range sliders
+  [
+    ['r-count',   'v-count',   'panelCount',   Number],
+    ['r-pwidth',  'v-pwidth',  'panelWidth',   Number],
+    ['r-pgap',    'v-pgap',    'panelGap',     Number],
+    ['r-pheight', 'v-pheight', 'panelHeight',  Number],
+    ['r-ppos',    'v-ppos',    'panelPos',     Number],
+    ['r-cheight', 'v-cheight', 'consoleH',     Number],
+    ['r-doors',   'v-doors',   'cabinetDoors', Number],
+  ].forEach(([inputId, valId, key, parse]) => {
+    const input = document.getElementById(inputId);
+    const valEl = document.getElementById(valId);
+    valEl.textContent = input.value;
+    input.addEventListener('input', () => {
+      cfg[key] = parse(input.value);
+      valEl.textContent = input.value;
+      draw();
+    });
+  });
+}
+
+/* ─────────────────────────────────────────
+   INIT
+───────────────────────────────────────── */
+setupControls();
+// sync swatch backgrounds on load
+document.querySelectorAll('.swatch').forEach(sw => {
+  const inp = sw.querySelector('input[type="color"]');
+  if (inp) sw.style.background = inp.value;
+});
+draw();
+</script>
+</body>
+</html>
